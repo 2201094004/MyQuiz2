@@ -1,0 +1,16 @@
+<resources>
+    <!-- Warna untuk teks jumlah -->
+    <color name="blueAmount">#2196F3</color>
+
+    <!-- Warna untuk teks deskripsi -->
+    <color name="descriptionTextColor">#666666</color>
+
+    <!-- Warna untuk transaksi pemasukan -->
+    <color name="incomeColor">#A5D6A7</color> <!-- Light Green -->
+
+    <!-- Warna untuk transaksi pengeluaran -->
+    <color name="expenseColor">#EF9A9A</color> <!-- Light Red -->
+
+    <!-- Background default -->
+    <color name="defaultBackground">#FFFFFF</color>
+</resources>
