@@ -10,7 +10,7 @@ import android.widget.RadioGroup;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.Calendar;
 
-public class TambahActivity extends AppCompatActivity {
+public class EditActivity extends AppCompatActivity {
 
     private Button btnDate;
     private EditText etAmount, etDescription;
@@ -22,7 +22,7 @@ public class TambahActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tambah);
+        setContentView(R.layout.activity_edit);
 
         btnDate = findViewById(R.id.btnDate);
         etAmount = findViewById(R.id.etAmount);
@@ -33,17 +33,18 @@ public class TambahActivity extends AppCompatActivity {
 
         btnDate.setOnClickListener(v -> showDatePickerDialog());
 
+        // Ambil data dari intent
         Intent intent = getIntent();
         if (intent.hasExtra("transaction")) {
             transaction = (Transaction) intent.getSerializableExtra("transaction");
             position = intent.getIntExtra("position", -1);
             populateFields(transaction);
-            btnDelete.setVisibility(View.VISIBLE);
-        } else {
-            btnDelete.setVisibility(View.GONE);
         }
 
+        // Event listener untuk tombol Simpan
         btnSave.setOnClickListener(v -> saveTransaction());
+
+        // Event listener untuk tombol Hapus
         btnDelete.setOnClickListener(v -> deleteTransaction());
     }
 
@@ -74,10 +75,10 @@ public class TambahActivity extends AppCompatActivity {
         int amount = Integer.parseInt(etAmount.getText().toString());
         String description = etDescription.getText().toString();
         boolean isIncome = rgCategory.getCheckedRadioButtonId() == R.id.rbIncome;
-        Transaction newTransaction = new Transaction(selectedDate, amount, description, isIncome);
+        Transaction updatedTransaction = new Transaction(selectedDate, amount, description, isIncome);
 
         Intent resultIntent = new Intent();
-        resultIntent.putExtra(transaction == null ? "newTransaction" : "updatedTransaction", newTransaction);
+        resultIntent.putExtra("updatedTransaction", updatedTransaction);
         resultIntent.putExtra("position", position);
         setResult(RESULT_OK, resultIntent);
         finish();

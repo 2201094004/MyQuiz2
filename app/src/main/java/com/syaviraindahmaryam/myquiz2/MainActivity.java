@@ -3,6 +3,7 @@ package com.syaviraindahmaryam.myquiz2;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
@@ -17,68 +18,77 @@ public class MainActivity extends AppCompatActivity {
     private TransactionAdapter adapter;
     private ArrayList<Transaction> transactionList;
     private int totalSaldo = 170000;  // Inisialisasi saldo awal
+    private static final int REQUEST_ADD_TRANSACTION = 1;
+    private static final int REQUEST_EDIT_TRANSACTION = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Inisialisasi view dari layout
         tvSaldo = findViewById(R.id.tvSaldo);
         lvTransactions = findViewById(R.id.lvTransactions);
         FloatingActionButton fabAddTransaction = findViewById(R.id.fabAddTransaction);
-        fabAddTransaction.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, TambahActivity.class);
-                startActivity(intent);
-            }
-        });
-
 
         // Inisialisasi list transaksi dan adapter
         transactionList = new ArrayList<>();
         adapter = new TransactionAdapter(this, transactionList);
         lvTransactions.setAdapter(adapter);
 
-        // Tampilkan saldo awal
         tvSaldo.setText("Saldo: Rp " + totalSaldo);
 
-        // Handle klik FloatingActionButton untuk menambah transaksi
-        fabAddTransaction.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Mulai TambahActivity untuk menambah transaksi baru
-                Intent intent = new Intent(MainActivity.this, TambahActivity.class);
-                startActivityForResult(intent, 1);
-            }
+        // Klik untuk menambah transaksi
+        fabAddTransaction.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, TambahActivity.class);
+            startActivityForResult(intent, REQUEST_ADD_TRANSACTION);
         });
 
+        // Klik item untuk edit atau delete
+        lvTransactions.setOnItemClickListener((parent, view, position, id) -> {
+            Transaction transaction = transactionList.get(position);
+            Intent intent = new Intent(MainActivity.this, TambahActivity.class);
+            intent.putExtra("transaction", transaction);
+            intent.putExtra("position", position);
+            startActivityForResult(intent, REQUEST_EDIT_TRANSACTION);
+        });
     }
 
-    // Menangani hasil dari TambahActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK && data != null) {
-            // Dapatkan transaksi baru dari TambahActivity
-            Transaction newTransaction = (Transaction) data.getSerializableExtra("newTransaction");
-            // Tambahkan transaksi baru ke dalam list
-            transactionList.add(newTransaction);
+        if (resultCode == RESULT_OK && data != null) {
+            if (requestCode == REQUEST_ADD_TRANSACTION) {
+                Transaction newTransaction = (Transaction) data.getSerializableExtra("newTransaction");
+                transactionList.add(newTransaction);
+                updateSaldo(newTransaction);
+            } else if (requestCode == REQUEST_EDIT_TRANSACTION) {
+                Transaction updatedTransaction = (Transaction) data.getSerializableExtra("updatedTransaction");
+                int position = data.getIntExtra("position", -1);
+                Transaction oldTransaction = transactionList.set(position, updatedTransaction);
+                adjustSaldoAfterEdit(oldTransaction, updatedTransaction);
+            } else if (requestCode == REQUEST_EDIT_TRANSACTION && data.hasExtra("deletedTransaction")) {
+                Transaction deletedTransaction = (Transaction) data.getSerializableExtra("deletedTransaction");
+                int position = data.getIntExtra("position", -1);
+                transactionList.remove(position);
+                adjustSaldoAfterDelete(deletedTransaction);
+            }
             adapter.notifyDataSetChanged();
-            // Update saldo sesuai dengan transaksi baru
-            updateSaldo(newTransaction);
         }
     }
 
-    // Metode untuk mengupdate saldo setelah transaksi baru ditambahkan
     private void updateSaldo(Transaction transaction) {
-        if (transaction.isIncome()) {
-            totalSaldo += transaction.getAmount();  // Tambah saldo jika pemasukan
-        } else {
-            totalSaldo -= transaction.getAmount();  // Kurangi saldo jika pengeluaran
-        }
-        // Update tampilan saldo
+        totalSaldo += transaction.isIncome() ? transaction.getAmount() : -transaction.getAmount();
+        tvSaldo.setText("Saldo: Rp " + totalSaldo);
+    }
+
+    private void adjustSaldoAfterEdit(Transaction oldTransaction, Transaction newTransaction) {
+        totalSaldo += newTransaction.isIncome() ? newTransaction.getAmount() : -newTransaction.getAmount();
+        totalSaldo -= oldTransaction.isIncome() ? oldTransaction.getAmount() : -oldTransaction.getAmount();
+        tvSaldo.setText("Saldo: Rp " + totalSaldo);
+    }
+
+    private void adjustSaldoAfterDelete(Transaction transaction) {
+        totalSaldo -= transaction.isIncome() ? transaction.getAmount() : -transaction.getAmount();
         tvSaldo.setText("Saldo: Rp " + totalSaldo);
     }
 }
